@@ -2,20 +2,56 @@
 # LInux MOnitoring Node Symbol scrypt
 # LIMONS
 # (c) DrCryptos / cryptocoins4all@gmail.com / @DrCryptos
+# usr/local/limons
 
 import argparse
-
-import json
 import os
 import sys
 import time
 
-import docker
-import psutil
 import lutil
 
 
 def main():
+
+        while True:
+
+                time.sleep(timeout_between_querry)
+                lutil.scr_set0(15)
+
+                try:
+                        print('[LI]nux [MO]nitoring [N]ode [S]ymbol = LIMONS v.[' + lutil.version + ']')
+                        mem = lutil.det_mem_full
+                        print('CPU % usage: ', lutil.get_cpu_percent_short(False))
+                        print('MEM total = ', mem[0])
+                        print('MEM available = ', mem[1])
+                        print('MEM used % = ', mem[2])
+                        print('MEM used = ', mem[3])
+                        print('MEM free = ', mem[4])
+                        print('=' * 40)
+
+                        print('Docker state:')
+
+
+                except Exception as e:
+                        if str(args_namespace.log).lower() == 'true':
+                                errlog.write('Error: [' + time.strftime("%Y%m%d-%H%M") + ']:' + '\n')
+                                errlog.write(str(containerx), 'Name: [', containerx.attrs['Name'], '] Status: [',containerx.attrs['State']['Status'], ']' + '\n')
+                                errlog.write('Exception code =' + str(e) + '\n')
+                                errlog.write('=' * 80 + '\n')
+                        print('Error !')
+                        continue
+        errlog.close()
+
+
+
+
+if __name__ == "__main__":
+        if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
+                print('Requires Python 3.6 or above !')
+                print('You have version ' + sys.version_info.major + '.' + ys.version_info.minor +' installed')
+                sys.exit(1)
+
         os.system('cls' if os.name == 'nt' else 'clear')
 
         parser = argparse.ArgumentParser()
@@ -60,14 +96,11 @@ def main():
                 help='Print current version LeMoNS, and exit'
         )
 
-
-
         args_namespace = parser.parse_args()
 
         if str(args_namespace.version).lower() == 'true' or str(args_namespace.version).lower() == '1':
                 lutil.sys_info(True, False)
                 exit(0)
-
 
 
         timeout_between_querry = int(args_namespace.pause) / 1000
@@ -80,55 +113,4 @@ def main():
                 errlog.write('LInux MOnitoring Node Symbol scrypt. V.' + lutil.version + '\n')
                 errlog.write('=' * 80 + '\n')
 
-        # node
-        # timestamp + UTC
-        # indicator [CPU,RAM used, RAM free, Container 1, Container x, ...]
-        # value
-
-
-        run_dockers = docker.from_env()
-
-
-        while True:
-
-                time.sleep(timeout_between_querry)
-                lutil.scr_set0(15)
-
-                try:
-                        cpu_p = psutil.cpu_percent()
-                        tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
-
-
-                        print('[LI]nux [MO]nitoring [N]ode [S]ymbol = LIMONS v.[' + lutil.version + ']')
-                        print('CPU % usage: ', str(cpu_p))
-                        print('=' * 40)
-                        print('Total Memory = ' + str(tot_m) + ' MB')
-                        print('Used Memory = ' + str(used_m) + ' MB')
-                        print('Free Memory = ' + str(free_m) + ' MB')
-                        print('=' * 40)
-                        print('Docker state:')
-
-                        run_dockers.reload()
-                        for containerx in run_dockers.containers.list():
-                                print(containerx, 'Name: [', containerx.attrs['Name'], '] Status: [',
-                                      containerx.attrs['State']['Status'], ']')
-
-
-?????                    json.dump(sysdata, syslog)
-
-                except Exception as e:
-                        if str(args_namespace.log).lower() == 'true':
-                                errlog.write('Error: [' + time.strftime("%Y%m%d-%H%M") + ']:' + '\n')
-                                errlog.write(str(containerx), 'Name: [', containerx.attrs['Name'], '] Status: [',containerx.attrs['State']['Status'], ']' + '\n')
-                                errlog.write('Exception code =' + str(e) + '\n')
-                                errlog.write('=' * 80 + '\n')
-                        print('Error !')
-                        continue
-        errlog.close()
-
-if __name__ == "__main__":
-        if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
-                print('Requires Python 3.6 or above !')
-                print('You have version ' + sys.version_info.major + '.' + ys.version_info.minor +' installed')
-                sys.exit(1)
         main()
