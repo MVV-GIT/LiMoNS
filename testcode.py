@@ -25,31 +25,32 @@ version = '0.1.0.0'
 #
 # exit(0)
 
-print('Short CPU:', psutil.cpu_percent(1, True))
-print('Tuple CPU: ', psutil.cpu_times_percent(1, True))
-print('Mem :', psutil.virtual_memory())
-print('SwapMem :', psutil.swap_memory())
-print('Disc info:', psutil.disk_partitions(False))
-# print('Net info:', psutil.net_io_counters(True))
-# print('Connections info:',psutil.net_connections('inet'))
-# print('Net addr info:', psutil.net_if_addrs())
-print('NEt stat info:', psutil.net_if_stats())
-print('USers info:', psutil.users())
-print('Boot time  info:', psutil.boot_time())
-
-
-print('Mem :', psutil.virtual_memory())
-print('SwapMem :', psutil.swap_memory())
-mem = psutil.virtual_memory()
-print(mem[0])
-print(mem[1])
-print(mem[2])
-print(mem[3])
-print(mem[4])
-
-print(psutil.cpu_percent(None, False))
+# print('Short CPU:', psutil.cpu_percent(1, True))
+# print('Tuple CPU: ', psutil.cpu_times_percent(1, True))
+# print('Mem :', psutil.virtual_memory())
+# print('SwapMem :', psutil.swap_memory())
+# print('Disc info:', psutil.disk_partitions(False))
+# # print('Net info:', psutil.net_io_counters(True))
+# # print('Connections info:',psutil.net_connections('inet'))
+# # print('Net addr info:', psutil.net_if_addrs())
+# print('NEt stat info:', psutil.net_if_stats())
+# print('USers info:', psutil.users())
+# print('Boot time  info:', psutil.boot_time())
+#
+#
+# print('Mem :', psutil.virtual_memory())
+# print('SwapMem :', psutil.swap_memory())
+# mem = psutil.virtual_memory()
+# print(mem[0])
+# print(mem[1])
+# print(mem[2])
+# print(mem[3])
+# print(mem[4])
+#
+# print(psutil.cpu_percent(None, False))
 
 # client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+
 # run_dockers = docker.from_env()
 #
 # for containerx in run_dockers.containers.list():
@@ -104,12 +105,22 @@ print(psutil.cpu_percent(None, False))
 #         pass
 #     else:
 #         print(pinfo)
+#
+#
+# print('kernel', int(psutil.cpu_times()[2]),'idle', int(psutil.cpu_times()[3]),'user',
+#       int(psutil.cpu_times()[0]),'iowait', int(psutil.cpu_times()[4]),
+#       'frequency', psutil.cpu_freq())
+
+# docker_state = []
+# run_dockers = docker.from_env()
+# for containerx in run_dockers.containers.list():
+#       docker_state.append([containerx, containerx.attrs['Name'], containerx.attrs['State']['Status'],containerx.attrs['Config']['Image']])
+#
+# print(len(docker_state))
 
 
-print('kernel', int(psutil.cpu_times()[2]),'idle', int(psutil.cpu_times()[3]),'user',
-      int(psutil.cpu_times()[0]),'iowait', int(psutil.cpu_times()[4]),
-      'frequency', psutil.cpu_freq())
+# print(psutil.virtual_memory())
+dcpuall = psutil.cpu_percent(None, True)
 
-
-
-
+for i in range(len(dcpuall)):
+    print('Core ' + str(i) + ' usage = ', dcpuall[i])

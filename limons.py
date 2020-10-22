@@ -8,109 +8,216 @@ import argparse
 import os
 import sys
 import time
-
+import logging
+from datetime import datetime
+import csv
 import lutil
+
+args_namespace, duration = None, None
+flag_log, flag_analytic, flag_display = False, False, False
+
+def out_analytics_init_header(afile, aallcpu, adockerinfo):
+    if flag_analytic:
+        dcount = len(adockerinfo)
+        adata = []
+        adata.append('DateTimeStamp')
+        adata.append('Process time')
+        adata.append('CPU usage %')
+
+        for i in range(len(aallcpu)):
+            adata.append('Core ' + str(i))
+
+
+        adata.append('MEM total')
+        adata.append('MEM available')
+        adata.append('MEM used %')
+        adata.append('MEM used')
+        adata.append('MEM free')
+        for i in range(dcount):
+            adata.append('DockerName' + str(i))
+            adata.append('DockerContainer' + str(i))
+            adata.append('DockerState' + str(i))
+            adata.append('DockerImage' + str(i))
+        writer = csv.writer(afile, delimiter=';')
+        writer.writerow(adata)
+
+
+def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitoring_time_start, fdisp = False, fanalytics = False, afile = ''):
+    difftime = (dtimestamp - dmonitoring_time_start)
+
+    if fdisp:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print('CPU usage % = ', lutil.c_red if dcpuu > 75 else lutil.c_yellow if dcpuu > 50 else lutil.c_green, dcpuu,
+              lutil.c_norm)
+
+        for i in range(len(dcpuall)):
+            print('Core ' + str(i) + ' usage = ', dcpuall[i])
+
+
+        print('MEM total = ', dmem[0])
+        print('MEM available = ', dmem[1])
+        print('MEM used % = ', lutil.c_red if dmem[2] > 75 else lutil.c_yellow if dmem[2] > 50 else lutil.c_green, dmem[2],
+              lutil.c_norm)
+        print('MEM used = ', dmem[3])
+        print('MEM free = ', dmem[4])
+        print('Time stamp = ', dtimestamp)
+        print('Process time = ' + str(difftime))
+        # print('=' * 60)
+        print('Docker state:')
+        for docid in ddockerinfo:
+            print(docid[0], ':', docid[1], ':', lutil.c_green if docid[2] == 'running' else lutil.c_red, docid[2], lutil.c_norm, ':', docid[3])
+
+
+    if fanalytics:
+        dcount = len(ddockerinfo)
+        adata = []
+        adata.append(dtimestamp)
+        adata.append(difftime)
+        adata.append(dcpuu)
+
+        for i in range(len(dcpuall)):
+            adata.append(dcpuall[i])
+
+        adata.append(dmem[0])
+        adata.append(dmem[1])
+        adata.append(dmem[2])
+        adata.append(dmem[3])
+        adata.append(dmem[4])
+
+        for docid in ddockerinfo:
+            adata.append(docid[0])
+            adata.append(docid[1])
+            adata.append(docid[2])
+            adata.append(docid[3])
+
+        writer = csv.writer(afile, delimiter=';')
+        writer.writerow(adata)
+
 
 
 def main():
+    monitoring_time_end = None
+    mcount = False
+    monitoring_time_start = datetime.now()
+    if flag_analytic:
+        out_analytics_init_header(analyticsfile, lutil.get_cpu_percent_short(True), lutil.get_docker_state())
+    if duration == '00:00' or duration == None:
+        mcount = True
+    else:
+        monitoring_time_end = lutil.get_time_end(monitoring_time_start, args_namespace.duration)
 
-        while True:
+    while (mcount == True) or (datetime.now() <= monitoring_time_end):
+        try:
+            monitoring_time_stamp = datetime.now()
+            mem = lutil.det_mem_full()
+            cpuu = int(lutil.get_cpu_percent_short(False))
+            cpuall = lutil.get_cpu_percent_short(True)
 
-                time.sleep(timeout_between_querry)
-                lutil.scr_set0(15)
+            dockerinfo = lutil.get_docker_state()
 
-                try:
-                        print('[LI]nux [MO]nitoring [N]ode [S]ymbol = LIMONS v.[' + lutil.version + ']')
-                        mem = lutil.det_mem_full
-                        print('CPU % usage: ', lutil.get_cpu_percent_short(False))
-                        print('MEM total = ', mem[0])
-                        print('MEM available = ', mem[1])
-                        print('MEM used % = ', mem[2])
-                        print('MEM used = ', mem[3])
-                        print('MEM free = ', mem[4])
-                        print('=' * 40)
+            if flag_display:
+                out_analytics_data(monitoring_time_stamp, mem, cpuu, cpuall, dockerinfo, monitoring_time_start, True, False, afile = '')
 
-                        print('Docker state:')
+            if flag_analytic:
+                out_analytics_data(monitoring_time_stamp, mem, cpuu, cpuall, dockerinfo, monitoring_time_start, False, True, afile = analyticsfile)
 
+            time.sleep(timeout_between_querry)
+        except Exception as e:
+            if flag_log:
+                logging.info('Error: [' + time.strftime("%Y%m%d-%H%M") + ']. Exception code =' + str(e) + '\n')
+            if flag_display:
+                print('Error !'+ str(e))
+            continue
 
-                except Exception as e:
-                        if str(args_namespace.log).lower() == 'true':
-                                errlog.write('Error: [' + time.strftime("%Y%m%d-%H%M") + ']:' + '\n')
-                                errlog.write(str(containerx), 'Name: [', containerx.attrs['Name'], '] Status: [',containerx.attrs['State']['Status'], ']' + '\n')
-                                errlog.write('Exception code =' + str(e) + '\n')
-                                errlog.write('=' * 80 + '\n')
-                        print('Error !')
-                        continue
-        errlog.close()
+    if flag_display:
+        # print('=' * 60)
+        print('\nExecution time: ' + lutil.c_green + str(datetime.now() - monitoring_time_start) + lutil.c_norm)
 
-
-
+    exit(0)
 
 if __name__ == "__main__":
-        if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
-                print('Requires Python 3.6 or above !')
-                print('You have version ' + sys.version_info.major + '.' + ys.version_info.minor +' installed')
-                sys.exit(1)
+    if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
+        # print('Requires Python 3.6 or above !')
+        # print('You have version ' + sys.version_info.major + '.' + sys.version_info.minor + ' installed')
+        sys.exit(200)
 
-        os.system('cls' if os.name == 'nt' else 'clear')
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-        parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-        parser.add_argument(
-                '-p', '--pause',
-                required=False,
-                type=str,
-                default=1000,
-                help='Pause between requests msec. Defalt 1000 msec'
-        )
+    parser.add_argument(
+        '-d', '--duration',
+        required=True,
+        type=str,
+        default='00:00',
+        help='Monitoring duration (HH:MM), 00:00 not limit'
+    )
 
-        parser.add_argument(
-                '-d', '--display',
-                type=str,
-                required=False,
-                default='true',
-                help='Out data on display (default: false or "0")'
-        )
+    parser.add_argument(
+        '-p', '--pause',
+        required=False,
+        type=str,
+        default=1000,
+        help='Delay between requests msec. Defalt 1000 msec'
+    )
 
-        parser.add_argument(
-                '-l', '--log',
-                type=str,
-                required=False,
-                default='true',
-                help='Out data to logfile (default: false or "0")'
-        )
+    parser.add_argument(
+        '-od', '--display',
+        type=str,
+        required=False,
+        default='false',
+        help='Out data on display (default: false)'
+    )
 
-        parser.add_argument(
-                '-i', '--info',
-                type=str,
-                required=False,
-                default='',
-                help='Print resource info and stop (default: false or "0")'
-        )
+    parser.add_argument(
+        '-l', '--log',
+        type=str,
+        required=False,
+        default='True',
+        help='Out data to logfile (default: true)'
+    )
 
-        parser.add_argument(
-                '-v', '--version',
-                required=False,
-                type=str,
-                default='',
-                help='Print current version LeMoNS, and exit'
-        )
+    parser.add_argument(
+        '-oa', '--analytics',
+        type=str,
+        required=False,
+        default='False',
+        help='Save analytic data (default: false)'
+    )
 
-        args_namespace = parser.parse_args()
+    parser.add_argument(
+        '-v', '--version',
+        required=False,
+        type=str,
+        default='',
+        help='Print current version LeMoNS, and exit'
+    )
 
-        if str(args_namespace.version).lower() == 'true' or str(args_namespace.version).lower() == '1':
-                lutil.sys_info(True, False)
-                exit(0)
+    args_namespace = parser.parse_args()
+
+    if str(args_namespace.version).lower() == '?':
+        lutil.print_sys_info()
+        exit(0)
 
 
-        timeout_between_querry = int(args_namespace.pause) / 1000
+    timeout_between_querry = int(args_namespace.pause) / 1000
 
-        if str(args_namespace.log).lower() == 'true':
-                errlogfilename = 'limons2-' + time.strftime("%Y%m%d-%H%M") + '.log'
-                syslogfilename = 'limons2-' + time.strftime("%Y%m%d-%H%M") + '.cvs'
-                errlog = open(errlogfilename, 'w')
-                syslog = open(syslogfilename, 'w')
-                errlog.write('LInux MOnitoring Node Symbol scrypt. V.' + lutil.version + '\n')
-                errlog.write('=' * 80 + '\n')
+    flag_log = str(args_namespace.log).lower() == 'true'
+    flag_analytic = str(args_namespace.analytics).lower() == 'true'
+    flag_display = str(args_namespace.display).lower() == 'true'
+    duration = str(args_namespace.duration)
 
-        main()
+    if (flag_analytic != True) and (flag_display != True):
+        exit(1000)
+
+    if flag_log:
+        logfilename = 'll' + datetime.now().strftime("%Y%m%d-%H%M%S") + '.log'
+        logging.basicConfig(level=logging.INFO, filename=logfilename, format='%(asctime)s %(levelname)s:%(message)s')
+
+    if flag_analytic:
+        analyticsfilename = 'la-' + time.strftime("%Y%m%d-%H%M") + '.csv'
+        analyticsfile = open(analyticsfilename, 'w')
+
+
+
+    main()

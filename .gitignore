@@ -2,7 +2,11 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.csv
+*.log
+*.rar
+testcode.py
+conf.py
 # C extensions
 *.so
 
@@ -123,3 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/la-20201023-0031.csv
