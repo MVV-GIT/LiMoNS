@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import docker
 import psutil
 
-version = '0.1.1.53'
+version = '0.1.1.55'
 
 # color scheme
 c_black = '\033[30m'  # black
