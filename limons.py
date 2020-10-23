@@ -7,6 +7,7 @@
 import argparse
 import os
 import sys
+import threading
 import time
 import logging
 from datetime import datetime
@@ -22,10 +23,10 @@ def out_analytics_init_header(afile, aallcpu, adockerinfo):
         adata = []
         adata.append('DateTimeStamp')
         adata.append('Process time')
-        adata.append('CPU usage %')
+        adata.append('CPU avr.usage %')
 
         for i in range(len(aallcpu)):
-            adata.append('Core ' + str(i))
+            adata.append('Core' + str(i) + '%')
 
 
         adata.append('MEM total')
@@ -47,17 +48,12 @@ def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitorin
 
     if fdisp:
         os.system('cls' if os.name == 'nt' else 'clear')
-        print('CPU usage % = ', lutil.c_red if dcpuu > 75 else lutil.c_yellow if dcpuu > 50 else lutil.c_green, dcpuu,
-              lutil.c_norm)
-
+        print('CPU avr.usage % = ', lutil.c_red if dcpuu > 75 else lutil.c_yellow if dcpuu > 50 else lutil.c_green, dcpuu, lutil.c_norm)
         for i in range(len(dcpuall)):
-            print('Core ' + str(i) + ' usage = ', dcpuall[i])
-
-
+            print('Core ' + str(i) + ' usage %  = ', lutil.c_red if dcpuall[i] > 75 else lutil.c_yellow if dcpuall[i] > 50 else lutil.c_green, dcpuall[i], lutil.c_norm)
         print('MEM total = ', dmem[0])
         print('MEM available = ', dmem[1])
-        print('MEM used % = ', lutil.c_red if dmem[2] > 75 else lutil.c_yellow if dmem[2] > 50 else lutil.c_green, dmem[2],
-              lutil.c_norm)
+        print('MEM used % = ', lutil.c_red if dmem[2] > 75 else lutil.c_yellow if dmem[2] > 50 else lutil.c_green, dmem[2],lutil.c_norm)
         print('MEM used = ', dmem[3])
         print('MEM free = ', dmem[4])
         print('Time stamp = ', dtimestamp)
@@ -73,10 +69,10 @@ def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitorin
         adata = []
         adata.append(dtimestamp)
         adata.append(difftime)
-        adata.append(dcpuu)
+        adata.append(str(dcpuu).replace('.', ','))
 
         for i in range(len(dcpuall)):
-            adata.append(dcpuall[i])
+            adata.append(str(dcpuall[i]).replace('.', ','))
 
         adata.append(dmem[0])
         adata.append(dmem[1])
@@ -95,7 +91,7 @@ def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitorin
 
 
 
-def main():
+def monitor_thread():
     monitoring_time_end = None
     mcount = False
     monitoring_time_start = datetime.now()
@@ -218,6 +214,4 @@ if __name__ == "__main__":
         analyticsfilename = 'la-' + time.strftime("%Y%m%d-%H%M") + '.csv'
         analyticsfile = open(analyticsfilename, 'w')
 
-
-
-    main()
+    monitor_thread()
