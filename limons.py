@@ -65,6 +65,8 @@ def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitorin
         print('Process time = ' + str(difftime))
         # print('=' * 60)
         print('Docker state:')
+
+
         for docid in ddockerinfo:
             print(docid[0], ':', docid[1], ':', lutil.c_green if docid[2] == 'running' else lutil.c_red, docid[2],
                   lutil.c_norm, ':', docid[3])
@@ -96,8 +98,14 @@ def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitorin
 
 
 def monitor_thread(thmcount, thmonitoring_time_end, tanalyticsfile):
-    while (thmcount == True) or (datetime.now() <= thmonitoring_time_end):
+    iterations = 0
+    while True:
+
+        if ((thmcount > 0) and (iterations == thmcount)) or ((thmcount == 0) and (datetime.now() >= thmonitoring_time_end)):
+            break
+
         try:
+            iterations = iterations + 1
             monitoring_time_stamp = datetime.now()
             mem = lutil.det_mem_full()
             cpuu = int(lutil.get_cpu_percent_short(False))
@@ -106,14 +114,17 @@ def monitor_thread(thmcount, thmonitoring_time_end, tanalyticsfile):
             dockerinfo = lutil.get_docker_state()
 
             if flag_display:
-                out_analytics_data(monitoring_time_stamp, mem, cpuu, cpuall, dockerinfo, monitoring_time_start, True,
-                                   False, afile='')
+                out_analytics_data(monitoring_time_stamp, dmem=mem, dcpuu=cpuu, dcpuall=cpuall, ddockerinfo=dockerinfo,
+                                   dmonitoring_time_start=monitoring_time_start, fdisp=True,
+                                   fanalytics=False, afile='')
 
             if flag_analytic:
-                out_analytics_data(monitoring_time_stamp, mem, cpuu, cpuall, dockerinfo, monitoring_time_start, False,
-                                   True, afile=tanalyticsfile)
+                out_analytics_data(monitoring_time_stamp, dmem=mem, dcpuu=cpuu, dcpuall=cpuall, ddockerinfo=dockerinfo,
+                                   dmonitoring_time_start=monitoring_time_start, fdisp=False,
+                                   fanalytics=True, afile=tanalyticsfile)
 
-            time.sleep(timeout_between_querry)
+            time.sleep(timeout_between_query)
+
         except Exception as e:
             if flag_log:
                 logging.info('Error: [' + time.strftime("%Y%m%d-%H%M") + ']. Exception code =' + str(e) + '\n')
@@ -122,8 +133,9 @@ def monitor_thread(thmcount, thmonitoring_time_end, tanalyticsfile):
             continue
 
     if flag_display:
-        # print('=' * 60)
-        print('\nExecution time: ' + lutil.c_green + str(datetime.now() - monitoring_time_start) + lutil.c_norm)
+        print('\nExecution time: ' + lutil.c_green + str(
+                datetime.now() - monitoring_time_start) + lutil.c_norm + '. Iterations count = ' + str(iterations))
+
     exit(0)
 
 
@@ -134,6 +146,14 @@ if __name__ == "__main__":
     os.system('cls' if os.name == 'nt' else 'clear')
 
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '-e', '--debug',
+        required=False,
+        type=str,
+        default='',
+        help='Debug mode'
+    )
 
     parser.add_argument(
         '-d', '--duration',
@@ -189,14 +209,15 @@ if __name__ == "__main__":
         lutil.print_sys_info()
         exit(0)
 
-    timeout_between_querry = int(args_namespace.pause) / 1000
+    timeout_between_query = int(args_namespace.pause) / 1000
 
     flag_log = str(args_namespace.log).lower() == 'true'
     flag_analytic = str(args_namespace.analytics).lower() == 'true'
     flag_display = str(args_namespace.display).lower() == 'true'
+    flag_debug = str(args_namespace.debug).lower() == 'true'
     duration = str(args_namespace.duration)
 
-    if (flag_analytic != True) and (flag_display != True):
+    if (not flag_analytic) and (not flag_display):
         exit(1000)
 
     if flag_log:
@@ -212,9 +233,19 @@ if __name__ == "__main__":
         analyticsfile = open(analyticsfilename, 'w')
         out_analytics_init_header(analyticsfile, lutil.get_cpu_percent_short(True), lutil.get_docker_state())
 
+    mcount = 0
+    monitoring_time_end = monitoring_time_start
+
     if duration == '00:00' or duration == None:
-        mcount = True
+        mcount = 0
     else:
-        monitoring_time_end = lutil.get_time_end(monitoring_time_start, args_namespace.duration)
+        if duration.isalnum():
+            mcount = int(duration)
+        else:
+            monitoring_time_end = lutil.get_time_end(monitoring_time_start, args_namespace.duration)
+
+    if flag_debug:
+        print(mcount, monitoring_time_end)
+        input()
 
     monitor_thread(mcount, monitoring_time_end, analyticsfile)

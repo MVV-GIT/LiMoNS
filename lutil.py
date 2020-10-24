@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import docker
 import psutil
 
-version = '0.1.1.55'
+version = '0.1.1.59'
 
 # color scheme
 c_black = '\033[30m'  # black
@@ -35,11 +35,17 @@ def get_docker_state():
     docker_state = []
     try:
         run_dockers = docker.from_env()
+    except Exception as e:
+        docker_state.append(['Error connect to Docker !', '---', '---', '---'])
+        return docker_state
+
+    if len(run_dockers.containers.list()) == 0:
+        docker_state.append(['Docker/Container(s) not found !', '---', '---', '---'])
+    else:
         for containerx in run_dockers.containers.list():
             docker_state.append([containerx, containerx.attrs['Name'], containerx.attrs['State']['Status'], containerx.attrs['Config']['Image']])
-        return docker_state
-    except Exception as e:
-        return 'Error :' + str(e)
+    return docker_state
+
 
 def get_cpu_percent_short(all_cpu = False):
     return psutil.cpu_percent(None, all_cpu)
