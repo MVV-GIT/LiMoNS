@@ -15,12 +15,12 @@ from datetime import datetime
 import lutil
 
 args_namespace, duration, analyticsfile = None, None, None
-flag_log, flag_analytic, flag_display = False, False, False
+flag_log, flag_analytic, flag_display, flag_docker_launched = False, False, False, False
 
 
 def out_analytics_init_header(afile, aallcpu, adockerinfo):
     if flag_analytic:
-        dcount = len(adockerinfo)
+
         adata = []
         adata.append('DateTimeStamp')
         adata.append('Process time')
@@ -34,11 +34,15 @@ def out_analytics_init_header(afile, aallcpu, adockerinfo):
         adata.append('MEM used %')
         adata.append('MEM used')
         adata.append('MEM free')
-        for i in range(dcount):
-            adata.append('DockerName' + str(i))
-            adata.append('DockerContainer' + str(i))
-            adata.append('DockerState' + str(i))
-            adata.append('DockerImage' + str(i))
+
+        if flag_docker_launched:
+            dcount = len(adockerinfo)
+            for i in range(dcount):
+                adata.append('DockerName' + str(i))
+                adata.append('DockerContainer' + str(i))
+                adata.append('DockerState' + str(i))
+                adata.append('DockerImage' + str(i))
+
         writer = csv.writer(afile, delimiter=';')
         writer.writerow(adata)
 
@@ -63,16 +67,16 @@ def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitorin
         print('MEM free = ', dmem[4])
         print('Time stamp = ', dtimestamp)
         print('Process time = ' + str(difftime))
-        # print('=' * 60)
-        print('Docker state:')
 
-
-        for docid in ddockerinfo:
-            print(docid[0], ':', docid[1], ':', lutil.c_green if docid[2] == 'running' else lutil.c_red, docid[2],
-                  lutil.c_norm, ':', docid[3])
+        if flag_docker_launched:
+            print('Docker state:')
+            for docid in ddockerinfo:
+                print(docid[0], ':', docid[1], ':', lutil.c_green if docid[2] == 'running' else lutil.c_red, docid[2],
+                      lutil.c_norm, ':', docid[3])
+        else:
+            print('Docker/Container(s) not found in system')
 
     if fanalytics:
-        dcount = len(ddockerinfo)
         adata = []
         adata.append(dtimestamp)
         adata.append(difftime)
@@ -87,11 +91,12 @@ def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitorin
         adata.append(dmem[3])
         adata.append(dmem[4])
 
-        for docid in ddockerinfo:
-            adata.append(docid[0])
-            adata.append(docid[1])
-            adata.append(docid[2])
-            adata.append(docid[3])
+        if flag_docker_launched:
+            for docid in ddockerinfo:
+                adata.append(docid[0])
+                adata.append(docid[1])
+                adata.append(docid[2])
+                adata.append(docid[3])
 
         writer = csv.writer(afile, delimiter=';')
         writer.writerow(adata)
@@ -101,7 +106,8 @@ def monitor_thread(thmcount, thmonitoring_time_end, tanalyticsfile):
     iterations = 0
     while True:
 
-        if ((thmcount > 0) and (iterations == thmcount)) or ((thmcount == 0) and (datetime.now() >= thmonitoring_time_end)):
+        if ((thmcount > 0) and (iterations == thmcount)) or (
+                (thmcount == 0) and (datetime.now() >= thmonitoring_time_end)):
             break
 
         try:
@@ -110,8 +116,10 @@ def monitor_thread(thmcount, thmonitoring_time_end, tanalyticsfile):
             mem = lutil.det_mem_full()
             cpuu = int(lutil.get_cpu_percent_short(False))
             cpuall = lutil.get_cpu_percent_short(True)
+            dockerinfo = None
 
-            dockerinfo = lutil.get_docker_state()
+            if flag_docker_launched:
+                dockerinfo = lutil.get_docker_state()
 
             if flag_display:
                 out_analytics_data(monitoring_time_stamp, dmem=mem, dcpuu=cpuu, dcpuall=cpuall, ddockerinfo=dockerinfo,
@@ -129,12 +137,12 @@ def monitor_thread(thmcount, thmonitoring_time_end, tanalyticsfile):
             if flag_log:
                 logging.info('Error: [' + time.strftime("%Y%m%d-%H%M") + ']. Exception code =' + str(e) + '\n')
             if flag_display:
-                print('Error !' + str(e))
+                print('Error on monitor_thread !' + str(e))
             continue
 
     if flag_display:
         print('\nExecution time: ' + lutil.c_green + str(
-                datetime.now() - monitoring_time_start) + lutil.c_norm + '. Iterations count = ' + str(iterations))
+            datetime.now() - monitoring_time_start) + lutil.c_norm + '. Iterations count = ' + str(iterations))
 
     exit(0)
 
@@ -215,6 +223,7 @@ if __name__ == "__main__":
     flag_analytic = str(args_namespace.analytics).lower() == 'true'
     flag_display = str(args_namespace.display).lower() == 'true'
     flag_debug = str(args_namespace.debug).lower() == 'true'
+    flag_docker_launched = lutil.check_docker_state()
     duration = str(args_namespace.duration)
 
     if (not flag_analytic) and (not flag_display):
@@ -225,7 +234,6 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO, filename=logfilename, format='%(asctime)s %(levelname)s:%(message)s')
 
     monitoring_time_end = None
-    mcount = False
     monitoring_time_start = datetime.now()
 
     if flag_analytic:
@@ -243,9 +251,5 @@ if __name__ == "__main__":
             mcount = int(duration)
         else:
             monitoring_time_end = lutil.get_time_end(monitoring_time_start, args_namespace.duration)
-
-    if flag_debug:
-        print(mcount, monitoring_time_end)
-        input()
 
     monitor_thread(mcount, monitoring_time_end, analyticsfile)

@@ -2,10 +2,11 @@ import http.client
 import os
 import sys
 from datetime import datetime, timedelta
+
 import docker
 import psutil
 
-version = '0.1.1.59'
+version = '0.1.1.71'
 
 # color scheme
 c_black = '\033[30m'  # black
@@ -29,59 +30,79 @@ def get_process_info():
             proc.name()
         except psutil.NoSuchProcess:
             pass
-    return(process_list)
+    return (process_list)
+
+
+def check_docker_state():
+    try:
+        run_dockers = docker.from_env()
+        return True
+    except Exception as e:
+        return False
+
 
 def get_docker_state():
     docker_state = []
-    try:
-        run_dockers = docker.from_env()
-    except Exception as e:
+    if not check_docker_state():
         docker_state.append(['Error connect to Docker !', '---', '---', '---'])
         return docker_state
-
-    if len(run_dockers.containers.list()) == 0:
-        docker_state.append(['Docker/Container(s) not found !', '---', '---', '---'])
     else:
-        for containerx in run_dockers.containers.list():
-            docker_state.append([containerx, containerx.attrs['Name'], containerx.attrs['State']['Status'], containerx.attrs['Config']['Image']])
-    return docker_state
+        run_dockers = docker.from_env()
+
+        if len(run_dockers.containers.list()) == 0:
+            docker_state.append(['Container(s) not found !', '---', '---', '---'])
+        else:
+            for containerx in run_dockers.containers.list():
+                docker_state.append([containerx, containerx.attrs['Name'], containerx.attrs['State']['Status'],
+                                     containerx.attrs['Config']['Image']])
+        return docker_state
 
 
-def get_cpu_percent_short(all_cpu = False):
+def get_cpu_percent_short(all_cpu=False):
     return psutil.cpu_percent(None, all_cpu)
 
-def get_cpu_percent_full(all_cpu = True):
+
+def get_cpu_percent_full(all_cpu=True):
     return psutil.cpu_times_percent(None, all_cpu)
+
 
 def det_mem_full():
     return psutil.virtual_memory()
 
+
 def det_swap_mem_full():
     return psutil.swap_memory()
 
-def get_disk_info_full(all_disk = True):
+
+def get_disk_info_full(all_disk=True):
     return psutil.disk_partitions(all_disk)
 
-def get_net_info_full(all_interface = True):
+
+def get_net_info_full(all_interface=True):
     return psutil.net_io_counters(all_interface)
 
-def get_net_connections_info_full(inet_connect = 'inet'):
+
+def get_net_connections_info_full(inet_connect='inet'):
     return psutil.net_connections(inet_connect)
+
 
 def get_net_addr_info():
     return psutil.net_if_addrs()
 
+
 def get_net_stat_info():
     return psutil.net_if_stats()
+
 
 def get_users_info():
     return psutil.users()
 
+
 def get_boot_time_info():
     return psutil.boot_time()
 
-def get_sys_info():
 
+def get_sys_info():
     sys_info_set = {}
 
     conn = http.client.HTTPConnection("ifconfig.me")
@@ -90,7 +111,7 @@ def get_sys_info():
     system_time_stamp = datetime.now()
 
     sys_info_set.update({'Scrypt_Name': 'LInux MOnitoring Node Symbol scrypt'})
-    sys_info_set.update({'Scrypt_Version':version})
+    sys_info_set.update({'Scrypt_Version': version})
     sys_info_set.update({'Python_Version': str(sys.version_info.major) + '.' + str(sys.version_info.minor)})
     sys_info_set.update({'OS': str(sys.platform) + '/' + str(os.name)})
     sys_info_set.update({'Node_IP': nodeip[2:-1]})
@@ -98,37 +119,39 @@ def get_sys_info():
     sys_info_set.update({'CPU_Thread': str(psutil.cpu_count(logical=True))})
     sys_info_set.update({'CPU_Arch': os.getenv('PROCESSOR_ARCHITECTURE')})
     sys_info_set.update({'CPU_ID': str(os.getenv('PROCESSOR_IDENTIFIER'))})
-    sys_info_set.update({'CPU_Level':str(os.getenv('PROCESSOR_LEVEL'))})
+    sys_info_set.update({'CPU_Level': str(os.getenv('PROCESSOR_LEVEL'))})
     sys_info_set.update({'Local_time_stamp': system_time_stamp.astimezone().strftime('%Y-%m-%d %H:%M:%S [%z]')})
 
     return sys_info_set
+
 
 def print_sys_info():
     info = get_sys_info()
 
     print('Scrypt version:', info['Scrypt_Name'], info['Scrypt_Version'])
     print('Python version:', info['Python_Version'])
-    print('OS:',  info['OS'])
+    print('OS:', info['OS'])
     print('Node IP:', info['Node_IP'])
-    print('CPU Core:',   info['CPU_Core'])
-    print('CPU thread:',   info['CPU_Thread'])
-    print('CPU arch:',   info['CPU_Arch'])
-    print('CPU ID:',   info['CPU_ID'])
-    print('CPU level:',   info['CPU_Level'])
+    print('CPU Core:', info['CPU_Core'])
+    print('CPU thread:', info['CPU_Thread'])
+    print('CPU arch:', info['CPU_Arch'])
+    print('CPU ID:', info['CPU_ID'])
+    print('CPU level:', info['CPU_Level'])
     print('Local time: ', info['Local_time_stamp'])
 
-def get_time_end(start_time, durationtime = '00:00'):
+
+def get_time_end(start_time, durationtime='00:00'):
     temp_time = datetime.strptime(durationtime, '%H:%M').time()
     return start_time + timedelta(hours=temp_time.hour, minutes=temp_time.minute)
 
-def get_local_time(noformated = False):
+
+def get_local_time(noformated=False):
     if noformated:
         return datetime.now()
     else:
         return datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S [%z]')
 
 
-
-def scr_set0(cstr = 0):
-        for _ in range(0..cstr):
-            print('\033[F\033[K', end='')
+def scr_set0(cstr=0):
+    for _ in range(0..cstr):
+        print('\033[F\033[K', end='')
