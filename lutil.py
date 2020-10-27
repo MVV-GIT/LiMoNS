@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import docker
 import psutil
 
-version = '0.1.1.71'
+version = '0.1.3.15'
 
 # color scheme
 c_black = '\033[30m'  # black
@@ -44,13 +44,13 @@ def check_docker_state():
 def get_docker_state():
     docker_state = []
     if not check_docker_state():
-        docker_state.append(['Error connect to Docker !', '---', '---', '---'])
+        docker_state.append(['Error connect to Docker !', '', '', ''])
         return docker_state
     else:
         run_dockers = docker.from_env()
 
         if len(run_dockers.containers.list()) == 0:
-            docker_state.append(['Container(s) not found !', '---', '---', '---'])
+            docker_state.append(['Container(s) not found !', '', '', ''])
         else:
             for containerx in run_dockers.containers.list():
                 docker_state.append([containerx, containerx.attrs['Name'], containerx.attrs['State']['Status'],
@@ -58,14 +58,16 @@ def get_docker_state():
         return docker_state
 
 
-def get_cpu_percent_short(all_cpu=False):
+# CPU metric
+def get_cpu_times(all_cpu=False):
+    return psutil.cpu_times(all_cpu)
+
+
+def get_cpu_percent(all_cpu=False):
     return psutil.cpu_percent(None, all_cpu)
 
 
-def get_cpu_percent_full(all_cpu=True):
-    return psutil.cpu_times_percent(None, all_cpu)
-
-
+# MEM metric
 def det_mem_full():
     return psutil.virtual_memory()
 
@@ -74,11 +76,17 @@ def det_swap_mem_full():
     return psutil.swap_memory()
 
 
+# DISC metric
 def get_disk_info_full(all_disk=True):
     return psutil.disk_partitions(all_disk)
 
 
-def get_net_info_full(all_interface=True):
+def get_disk_io_counters(all_disk=True):
+    return psutil.disk_io_counters(all_disk)
+
+
+# NET metric
+def get_net_net_io_counters(all_interface=True):
     return psutil.net_io_counters(all_interface)
 
 
@@ -94,6 +102,7 @@ def get_net_stat_info():
     return psutil.net_if_stats()
 
 
+# Other metric
 def get_users_info():
     return psutil.users()
 
