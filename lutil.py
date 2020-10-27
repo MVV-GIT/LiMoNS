@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import docker
 import psutil
 
-version = '0.1.3.15'
+version = '0.1.3.27'
 
 # color scheme
 c_black = '\033[30m'  # black
@@ -58,59 +58,6 @@ def get_docker_state():
         return docker_state
 
 
-# CPU metric
-def get_cpu_times(all_cpu=False):
-    return psutil.cpu_times(all_cpu)
-
-
-def get_cpu_percent(all_cpu=False):
-    return psutil.cpu_percent(None, all_cpu)
-
-
-# MEM metric
-def det_mem_full():
-    return psutil.virtual_memory()
-
-
-def det_swap_mem_full():
-    return psutil.swap_memory()
-
-
-# DISC metric
-def get_disk_info_full(all_disk=True):
-    return psutil.disk_partitions(all_disk)
-
-
-def get_disk_io_counters(all_disk=True):
-    return psutil.disk_io_counters(all_disk)
-
-
-# NET metric
-def get_net_net_io_counters(all_interface=True):
-    return psutil.net_io_counters(all_interface)
-
-
-def get_net_connections_info_full(inet_connect='inet'):
-    return psutil.net_connections(inet_connect)
-
-
-def get_net_addr_info():
-    return psutil.net_if_addrs()
-
-
-def get_net_stat_info():
-    return psutil.net_if_stats()
-
-
-# Other metric
-def get_users_info():
-    return psutil.users()
-
-
-def get_boot_time_info():
-    return psutil.boot_time()
-
-
 def get_sys_info():
     sys_info_set = {}
 
@@ -159,8 +106,3 @@ def get_local_time(noformated=False):
         return datetime.now()
     else:
         return datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S [%z]')
-
-
-def scr_set0(cstr=0):
-    for _ in range(0..cstr):
-        print('\033[F\033[K', end='')

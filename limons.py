@@ -11,67 +11,52 @@ import os
 import sys
 import time
 from datetime import datetime
-
+import psutil
 import lutil
 
 args_namespace, duration, analyticsfile = None, None, None
 flag_log, flag_analytic, flag_display, flag_docker_launched = False, False, False, False
 mflag_cpu, mflag_mem, mflag_disk, mflag_network, mflag_docker = False, False, False, False, False
 
-def out_analytics_init_header_cpu_percent (afile):
+def out_analytics_init_header_cpu_total(afile):
     adata = []
     adata.append('DateTimeStamp')
     adata.append('CPU ID')
+    adata.append('CPU %')
 
-    for cpuinfoset in lutil.get_cpu_percent(False)._fields:
+    for cpuinfoset in psutil.cpu_times(False)._fields:
         adata.append(cpuinfoset)
 
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
-
-def out_analytics_init_header_cpu_times (afile):
+def out_analytics_init_header_mem(afile):
     adata = []
     adata.append('DateTimeStamp')
-    adata.append('CPU ID')
-
-    for cpuinfoset in lutil.get_cpu_times(False)._fields:
-        adata.append(cpuinfoset)
-
-    writer = csv.writer(afile, delimiter=';')
-    writer.writerow(adata)
-
-
-def out_analytics_init_header_mem (afile):
-    adata = []
-    adata.append('DateTimeStamp')
-    for memset in lutil.det_mem_full()._fields:
+    for memset in psutil.virtual_memory()._fields:
         adata.append(memset)
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
-
-def out_analytics_init_header_disk_io_counters (afile):
+def out_analytics_init_header_disk_io_counters(afile):
     adata = []
     adata.append('DateTimeStamp')
     adata.append('Disk ID')
-    for diskset in lutil.get_disk_io_counters()._fields:
+    for diskset in psutil.disk_io_counters(False)._fields:
         adata.append(diskset)
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
-
-def out_analytics_init_header_net_io_counters (afile):
+def out_analytics_init_header_net_io_counters(afile):
     adata = []
     adata.append('DateTimeStamp')
     adata.append('Interface')
-    for netset in lutil.get_net_net_io_counters()._fields:
+    for netset in psutil.net_io_counters(False)._fields:
         adata.append(netset)
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
-
-def out_analytics_init_header_docker (afile):
+def out_analytics_init_header_docker(afile):
     adata = []
     adata.append('DateTimeStamp')
     adata.append('DockerName')
@@ -81,26 +66,85 @@ def out_analytics_init_header_docker (afile):
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
+def section_cpu(monitoring_time_stamp = datetime.now()):
+    cpupercent = list(psutil.cpu_percent(percpu=True))
+    cputime = list(psutil.cpu_times(percpu=True))
+    if flag_display:
+        print('[CPU section]')
+    for i in range(len(cpupercent)):
+        if flag_analytic:
+            writer = csv.writer(analyticsfile_cpu_percent, delimiter=';')
+            adata = []
+            adata.append(monitoring_time_stamp)
+            adata.append(i)
+            adata.append(str(cpupercent[i]).replace('.', ','))
+
+            for cpuinfoset in cputime[i]:
+                adata.append((str(cpuinfoset).replace('.', ',')))
+            writer.writerow(adata)
+
+        if flag_display:
+            print('CPU ID:', i, '/ CPU %', lutil.c_red if cpupercent[i] >=75 else lutil.c_yellow if cpupercent[i]>=50 else lutil.c_green, cpupercent[i], lutil.c_norm , end='')
+            j = 0
+            for key in cputime[i]._fields:
+                print(' / ', key, ' = {:f}'.format(cputime[i][j]), end='')
+                j = j+ 1
+            print()
+    print()
+
+
+def section_mem(monitoring_time_stamp = datetime.now()):
+    memuse = psutil.virtual_memory()
+    if flag_analytic:
+        writer = csv.writer(analyticsfile_mem, delimiter=';')
+        adata = []
+        adata.append(monitoring_time_stamp)
+        for meminfo in memuse:
+            adata.append(str(meminfo).replace('.', ','))
+        writer.writerow(adata)
+
+    if flag_display:
+        print('[MEM section]')
+        print('MEM: ',end='')
+        i=0
+        for key in memuse._fields:
+            print(key, '=' if key != 'percent' else  lutil.c_red if memuse[i] >=75 else lutil.c_yellow if memuse[i]>=50 else lutil.c_green, memuse[i], '/', lutil.c_norm , end='')
+            i=i+1
+        print('\n')
+
+
+def section_disk(monitoring_time_stamp = datetime.now()):
+    hdduse = psutil.disk_io_counters(True)
+    if flag_display:
+        print('[DISK section]')
+    for hddname, hddsetmesure in hdduse.items():
+        if flag_analytic:
+            writer = csv.writer(analyticsfile_disk, delimiter=';')
+            adata = []
+            adata.append(monitoring_time_stamp)
+            adata.append(hddname)
+            for detail in hddsetmesure:
+                adata.append(str(detail).replace('.', ','))
+            writer.writerow(adata)
+        if flag_display:
+            print('Disk:', hddname, end='')
+            i = 0
+            for key in hddsetmesure._fields:
+                print(' /', key, '=', hddsetmesure[i], end='')
+            print()
 
 
 
+def section_net(monitoring_time_stamp = datetime.now()):
+    pass
 
-def out_analytics_data(dtimestamp, dmem, dcpuu, dcpuall, ddockerinfo, dmonitoring_time_start, fdisp=False,
-                       fanalytics=False, afile=''):
-    difftime = (dtimestamp - dmonitoring_time_start)
+def section_docker(monitoring_time_stamp = datetime.now()):
+    pass
 
-    if fdisp:
-        os.system('cls' if os.name == 'nt' else 'clear')
-
-
-
-    if fanalytics:
-
-
-
-
-def monitor_thread(thmcount, thmonitoring_time_end, tanalyticsfile):
+def monitor_thread(thmcount, thmonitoring_time_end):
     iterations = 0
+    monitoring_time_start  = datetime.now()
+
     while True:
 
         if ((thmcount > 0) and (iterations == thmcount)) or (
@@ -111,44 +155,19 @@ def monitor_thread(thmcount, thmonitoring_time_end, tanalyticsfile):
             iterations = iterations + 1
             monitoring_time_stamp = datetime.now()
 
-            # Get info
+            if flag_display:
+                os.system('cls' if os.name == 'nt' else 'clear')
+
             if mflag_cpu:
-                pass
-
+                section_cpu()
             if mflag_mem:
-                pass
-
+                section_mem()
             if mflag_disk:
-                pass
-
+                section_disk()
             if mflag_network:
-                pass
-
+                section_net()
             if mflag_docker:
-                pass
-
-
-                flag_log
-                flag_analytic
-                flag_display
-
-            # mem = lutil.det_mem_full()
-            # cpuu = int(lutil.get_cpu_percent_short(False))
-            # cpuall = lutil.get_cpu_percent_short(True)
-            # dockerinfo = None
-            #
-            # if flag_docker_launched:
-            #     dockerinfo = lutil.get_docker_state()
-            #
-            # if flag_display:
-            #     out_analytics_data(monitoring_time_stamp, dmem=mem, dcpuu=cpuu, dcpuall=cpuall, ddockerinfo=dockerinfo,
-            #                        dmonitoring_time_start=monitoring_time_start, fdisp=True,
-            #                        fanalytics=False, afile='')
-            #
-            # if flag_analytic:
-            #     out_analytics_data(monitoring_time_stamp, dmem=mem, dcpuu=cpuu, dcpuall=cpuall, ddockerinfo=dockerinfo,
-            #                        dmonitoring_time_start=monitoring_time_start, fdisp=False,
-            #                        fanalytics=True, afile=tanalyticsfile)
+                section_docker()
 
             time.sleep(timeout_between_query)
 
@@ -170,15 +189,13 @@ if __name__ == "__main__":
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
         sys.exit(200)
 
-    os.system('cls' if os.name == 'nt' else 'clear')
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         '-cpu', '--cpu',
         required=False,
         type=str,
-        default='true',
+        default='false',
         help='Observe CPU readings'
     )
 
@@ -186,7 +203,7 @@ if __name__ == "__main__":
         '-mem', '--mem',
         required=False,
         type=str,
-        default='true',
+        default='false',
         help='Observe MEM readings'
     )
 
@@ -194,7 +211,7 @@ if __name__ == "__main__":
         '-disk', '--disk',
         required=False,
         type=str,
-        default='true',
+        default='false',
         help='Observe DISK readings'
     )
 
@@ -202,16 +219,15 @@ if __name__ == "__main__":
         '-net', '--network',
         required=False,
         type=str,
-        default='true',
+        default='false',
         help='Observe NETWORK readings'
     )
-
 
     parser.add_argument(
         '-docker', '--docker',
         required=False,
         type=str,
-        default='true',
+        default='false',
         help='Observe DOCKER readings'
     )
 
@@ -219,7 +235,7 @@ if __name__ == "__main__":
         '-deb', '--debug',
         required=False,
         type=str,
-        default='',
+        default='false',
         help='Debug mode'
     )
 
@@ -251,7 +267,7 @@ if __name__ == "__main__":
         '-l', '--log',
         type=str,
         required=False,
-        default='True',
+        default='false',
         help='Out data to logfile (default: true)'
     )
 
@@ -283,7 +299,6 @@ if __name__ == "__main__":
     mflag_network = str(args_namespace.network).lower() == 'true'
     mflag_docker = str(args_namespace.docker).lower() == 'true'
 
-
     timeout_between_query = int(args_namespace.pause) / 1000
     duration = str(args_namespace.duration)
 
@@ -294,14 +309,11 @@ if __name__ == "__main__":
 
     flag_docker_launched = lutil.check_docker_state()
 
-
-
     if ((not flag_analytic) and (not flag_display)) or ((not mflag_cpu) and (not mflag_mem) and (not mflag_disk) and (not mflag_network) and (not mflag_docker)):
         exit(1000)
 
-
     if flag_log:
-        logfilename = 'll' + datetime.now().strftime("%Y%m%d-%H%M%S") + '.log'
+        logfilename = 'limons' + datetime.now().strftime("%Y%m%d-%H%M%S") + '.log'
         logging.basicConfig(level=logging.INFO, filename=logfilename, format='%(asctime)s %(levelname)s:%(message)s')
 
     monitoring_time_end = None
@@ -311,49 +323,29 @@ if __name__ == "__main__":
         file_name_timestamp = time.strftime("%Y%m%d-%H%M")
 
         if mflag_cpu:
-            analyticsfilename_cpu_percent = 'lcpup-' + file_name_timestamp + '.csv'
+            analyticsfilename_cpu_percent = 'l-cpu-' + file_name_timestamp + '.csv'
             analyticsfile_cpu_percent = open(analyticsfilename_cpu_percent, 'w')
-            out_analytics_init_header_cpu_percent(analyticsfile_cpu_percent)
-            analyticsfile_cpu_percent.close()
-
-
-            analyticsfilename_cpu_times = 'lcput-' + file_name_timestamp + '.csv'
-            analyticsfile_cpu_times = open(analyticsfilename_cpu_times, 'w')
-            out_analytics_init_header_cpu_times(analyticsfile_cpu_times)
-            analyticsfile_cpu_times.close()
-
+            out_analytics_init_header_cpu_total(analyticsfile_cpu_percent)
 
         if mflag_mem:
-            analyticsfilename_mem = 'lmem-' + file_name_timestamp + '.csv'
+            analyticsfilename_mem = 'l-mem-' + file_name_timestamp + '.csv'
             analyticsfile_mem = open(analyticsfilename_mem, 'w')
             out_analytics_init_header_mem(analyticsfile_mem)
-            analyticsfile_mem.close()
-
 
         if mflag_disk:
-            analyticsfilename_disk = 'ldisk-' + file_name_timestamp + '.csv'
+            analyticsfilename_disk = 'l-disk-' + file_name_timestamp + '.csv'
             analyticsfile_disk = open(analyticsfilename_disk, 'w')
-            out_analytics_init_header_disk(analyticsfile_disk)
-            analyticsfile_disk.close()
-
+            out_analytics_init_header_disk_io_counters(analyticsfile_disk)
 
         if mflag_network:
-            analyticsfilename_net = 'lnet-' + file_name_timestamp + '.csv'
+            analyticsfilename_net = 'l-net-' + file_name_timestamp + '.csv'
             analyticsfile_net = open(analyticsfilename_net, 'w')
-            out_analytics_init_header_net(analyticsfile_net)
-            analyticsfile_net.close()
-
-
+            out_analytics_init_header_net_io_counters(analyticsfile_net)
 
         if mflag_docker:
-            analyticsfilename_docker = 'ldocker-' + file_name_timestamp + '.csv'
+            analyticsfilename_docker = 'l-docker-' + file_name_timestamp + '.csv'
             analyticsfile_docker = open(analyticsfilename_docker, 'w')
             out_analytics_init_header_docker(analyticsfile_docker)
-            analyticsfile_docker.close()
-
-
-
-
 
     mcount = 0
     monitoring_time_end = monitoring_time_start
@@ -367,3 +359,14 @@ if __name__ == "__main__":
             monitoring_time_end = lutil.get_time_end(monitoring_time_start, args_namespace.duration)
 
     monitor_thread(mcount, monitoring_time_end)
+
+    if mflag_cpu:
+        analyticsfile_cpu_percent.close()
+    if mflag_mem:
+        analyticsfile_mem.close()
+    if mflag_disk:
+        analyticsfile_disk.close()
+    if mflag_network:
+        analyticsfile_net.close()
+    if mflag_docker:
+        analyticsfile_docker.close()
