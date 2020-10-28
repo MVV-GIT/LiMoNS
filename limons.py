@@ -3,6 +3,7 @@
 # LIMONS
 # (c) DrCryptos / cryptocoins4all@gmail.com / @DrCryptos
 # usr/local/limons
+# limons.py -d 5 -p 1000 -analytics true -disp true -cpu true -mem true -disk true -net true -docker true
 
 import argparse
 import csv
@@ -11,12 +12,15 @@ import os
 import sys
 import time
 from datetime import datetime
+
 import psutil
+
 import lutil
 
 args_namespace, duration, analyticsfile = None, None, None
 flag_log, flag_analytic, flag_display, flag_docker_launched = False, False, False, False
 mflag_cpu, mflag_mem, mflag_disk, mflag_network, mflag_docker = False, False, False, False, False
+
 
 def out_analytics_init_header_cpu_total(afile):
     adata = []
@@ -30,31 +34,41 @@ def out_analytics_init_header_cpu_total(afile):
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
+
 def out_analytics_init_header_mem(afile):
     adata = []
     adata.append('DateTimeStamp')
+
     for memset in psutil.virtual_memory()._fields:
         adata.append(memset)
+
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
+
 
 def out_analytics_init_header_disk_io_counters(afile):
     adata = []
     adata.append('DateTimeStamp')
     adata.append('Disk ID')
+
     for diskset in psutil.disk_io_counters(False)._fields:
         adata.append(diskset)
+
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
+
 
 def out_analytics_init_header_net_io_counters(afile):
     adata = []
     adata.append('DateTimeStamp')
     adata.append('Interface')
+
     for netset in psutil.net_io_counters(False)._fields:
         adata.append(netset)
+
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
+
 
 def out_analytics_init_header_docker(afile):
     adata = []
@@ -66,11 +80,12 @@ def out_analytics_init_header_docker(afile):
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
-def section_cpu(monitoring_time_stamp = datetime.now()):
+
+def section_cpu(monitoring_time_stamp=datetime.now()):
     cpupercent = list(psutil.cpu_percent(percpu=True))
     cputime = list(psutil.cpu_times(percpu=True))
     if flag_display:
-        print('[CPU section]')
+        print(lutil.c_cyan, '[CPU section]', lutil.c_norm, sep='')
     for i in range(len(cpupercent)):
         if flag_analytic:
             writer = csv.writer(analyticsfile_cpu_percent, delimiter=';')
@@ -84,16 +99,19 @@ def section_cpu(monitoring_time_stamp = datetime.now()):
             writer.writerow(adata)
 
         if flag_display:
-            print('CPU ID:', i, '/ CPU %', lutil.c_red if cpupercent[i] >=75 else lutil.c_yellow if cpupercent[i]>=50 else lutil.c_green, cpupercent[i], lutil.c_norm , end='')
+            print('CPU ID:', i, '/ CPU %',
+                  lutil.c_red if cpupercent[i] >= 75 else lutil.c_yellow if cpupercent[i] >= 50 else lutil.c_green,
+                  cpupercent[i], lutil.c_norm, end='')
             j = 0
             for key in cputime[i]._fields:
                 print(' / ', key, ' = {:f}'.format(cputime[i][j]), end='')
-                j = j+ 1
+                j = j + 1
             print()
-    print()
+    if flag_display:
+        print()
 
 
-def section_mem(monitoring_time_stamp = datetime.now()):
+def section_mem(monitoring_time_stamp=datetime.now()):
     memuse = psutil.virtual_memory()
     if flag_analytic:
         writer = csv.writer(analyticsfile_mem, delimiter=';')
@@ -104,19 +122,20 @@ def section_mem(monitoring_time_stamp = datetime.now()):
         writer.writerow(adata)
 
     if flag_display:
-        print('[MEM section]')
-        print('MEM: ',end='')
-        i=0
+        print(lutil.c_cyan, '[MEM section]', lutil.c_norm, sep='')
+        print('MEM: ', end='')
+        i = 0
         for key in memuse._fields:
-            print(key, '=' if key != 'percent' else  lutil.c_red if memuse[i] >=75 else lutil.c_yellow if memuse[i]>=50 else lutil.c_green, memuse[i], '/', lutil.c_norm , end='')
-            i=i+1
+            print(key, '=' if key != 'percent' else lutil.c_red if memuse[i] >= 75 else lutil.c_yellow if memuse[i] >= 50 else lutil.c_green,
+                  memuse[i], '/', lutil.c_norm, end='')
+            i = i + 1
         print('\n')
 
 
-def section_disk(monitoring_time_stamp = datetime.now()):
+def section_disk(monitoring_time_stamp=datetime.now()):
     hdduse = psutil.disk_io_counters(True)
     if flag_display:
-        print('[DISK section]')
+        print(lutil.c_cyan, '[DISK section]', lutil.c_norm, sep='')
     for hddname, hddsetmesure in hdduse.items():
         if flag_analytic:
             writer = csv.writer(analyticsfile_disk, delimiter=';')
@@ -132,18 +151,74 @@ def section_disk(monitoring_time_stamp = datetime.now()):
             for key in hddsetmesure._fields:
                 print(' /', key, '=', hddsetmesure[i], end='')
             print()
+    if flag_display:
+        print()
 
 
+def section_net(monitoring_time_stamp=datetime.now()):
+    netuse = psutil.net_io_counters(True)
+    if flag_display:
+        print(lutil.c_cyan, '[NET section]', lutil.c_norm, sep='')
+    for netname, netsetmesure in netuse.items():
+        if flag_analytic:
+            writer = csv.writer(analyticsfile_net, delimiter=';')
+            adata = []
+            adata.append(monitoring_time_stamp)
+            adata.append(netname)
+            for detail in netsetmesure:
+                adata.append(str(detail).replace('.', ','))
+            writer.writerow(adata)
+        if flag_display:
+            print('Interface:', netname)
+            i = 0
+            for key in netsetmesure._fields:
+                print(' /', key, '=', netsetmesure[i], end='')
+            print()
+    if flag_display:
+        print()
 
-def section_net(monitoring_time_stamp = datetime.now()):
-    pass
 
-def section_docker(monitoring_time_stamp = datetime.now()):
-    pass
+def section_docker(monitoring_time_stamp=datetime.now()):
+    if lutil.check_docker_state():
+        dockeruse = lutil.get_docker_state()
+
+        if flag_display:
+            print(lutil.c_cyan, '[DOCKER section]', lutil.c_norm, sep='')
+            i = 0
+            for containerx in dockeruse:
+                print('Container ', i, ' : ', containerx[0], ' / ', containerx[1], ' / ', containerx[2], ' / ',
+                      containerx[3])
+                i = i + 1
+            print()
+
+        if flag_analytic:
+            writer = csv.writer(analyticsfile_docker, delimiter=';')
+            adata = []
+            adata.append(monitoring_time_stamp)
+
+            i = 0
+            for containerx in dockeruse:
+                adata.append('Docker ' + str(i))
+                adata.append(containerx[0])
+                adata.append(containerx[1])
+                adata.append(containerx[2])
+                adata.append(containerx[3])
+                i = i + 1
+            writer.writerow(adata)
+    else:
+        if flag_display:
+            print('Running Docker not found...')
+        if flag_analytic:
+            writer = csv.writer(analyticsfile_docker, delimiter=';')
+            adata = []
+            adata.append(monitoring_time_stamp)
+            adata.append('Dicker not found', '', '', '')
+            writer.writerow(adata)
+
 
 def monitor_thread(thmcount, thmonitoring_time_end):
     iterations = 0
-    monitoring_time_start  = datetime.now()
+    monitoring_time_start = datetime.now()
 
     while True:
 
@@ -187,6 +262,7 @@ def monitor_thread(thmcount, thmonitoring_time_end):
 
 if __name__ == "__main__":
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
+        print('LiMoNS requires Python 3.6+ to run.')
         sys.exit(200)
 
     parser = argparse.ArgumentParser()
@@ -307,9 +383,10 @@ if __name__ == "__main__":
     flag_display = str(args_namespace.display).lower() == 'true'
     flag_debug = str(args_namespace.debug).lower() == 'true'
 
-    flag_docker_launched = lutil.check_docker_state()
+    # flag_docker_launched = lutil.check_docker_state()
 
-    if ((not flag_analytic) and (not flag_display)) or ((not mflag_cpu) and (not mflag_mem) and (not mflag_disk) and (not mflag_network) and (not mflag_docker)):
+    if ((not flag_analytic) and (not flag_display)) or (
+            (not mflag_cpu) and (not mflag_mem) and (not mflag_disk) and (not mflag_network) and (not mflag_docker)):
         exit(1000)
 
     if flag_log:

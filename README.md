@@ -6,14 +6,18 @@
 The script operation modes are controlled through parameters.
 
 
+How the script works:
+The script operation modes are controlled through parameters.
+
+
 [Duration] parameter
-'-d' or '--duration' is the main parameter that sets the mode of the script.
+'-d' or '--duration' is the main parameter that sets the script's mode of operation.
 if specified as 00:00 - the script runs until it is interrupted by an external command
 if it is specified as HH: MM - the script runs HH hours and MM minutes (there will be not a large error at the level of seconds) and will stop working
-if specified as XX, the script will run XX cycles of information retrieval and stop working
+if specified as XX - the script will run XX cycles of information retrieval and stop working
 
 Example:
-./limons.py -e 00:00
+./limons.py -d 00:00
 or
 ./limons.py --duration 00:00
 
@@ -33,22 +37,20 @@ or
 ./limons.py --pause 1500
 
 
-
 [Display] parameter
-'-od', '--display'
+'-disp', '--display'
 Important parameter - enables or disables the display of all captured indicators on the screen (default: false)
 Examples of using
-./limons.py -od true
+./limons.py -disp true
 or
 ./limons.py --display true
 
 
-
-[Analytics] parameter
-'-oa', '--analytics'
+The [analytics] parameter
+'-analytics', '--analytics'
 Important parameter - enables or disables the recording of all captured indicators to a csv file for further analysis (default: false)
 Examples of using
-./limons.py -oa true
+./limons.py -analytics true
 or
 ./limons.py --analytics true
 Additional Information:
@@ -56,9 +58,8 @@ csv file contains:
 - column headings (corresponding to the name of the measured indicators)
 - rows with data for each column
 -record separator ";"
-- decimal separator ","
+-decimal separator ","
 If Docker is not found in the system - columns with container data are not displayed
-
 
 
 [Log] parameter
@@ -68,27 +69,39 @@ Examples of using
 Examples of using
 ./limons.py -l true
 or
-./limons.py --log true?
+./limons.py --log true
 
 
-[Version] parameter
+Controlled indicators of the system:
+enable indicator control true
+disable indicator control false
+'-cpu' or '--cpu' - ​​processor (s)
+'-mem' or '--mem' - memory
+'-disk' or '--disk' - disk (s)
+ '-net' or '--network' - network interfaces
+'-docker' or '--docker' - docker and container (s)
+
+
+The [version] parameter
 '-v', '--version',
 Displays the current version of LeMoNS, some system characteristics, and exits
 Examples of using
-./limons.py -v ?
+./limons.py -v?
 or
-./limons.py --version ?
+./limons.py --version?
 Return code (0)
 
 
-
-[Debug] parameter
-'-e' or '--debug' - the parameter indicates that the script is running in debug mode.
+The [debug] parameter
+'-deb' or '--debug' - the parameter indicates that the script is running in debug mode.
 Examples of using
-./limons.py -e true
+./limons.py -deb true
 or
 ./limons.py --debug true
 
 
+Attention: if both display and analytics parameters are set to false, or if no monitoring direction is selected (CPU, MEM, DISK, NETWORK, DOKER) - the script will stop working, return code (1000)
 
-Attention: if both display and analytics parameters are set to false - the script will stop working, return code (1000)
+Observe CPU readings
+
+The system is cross-platform. Works for windows, linux, nix. For each system, its own sets of tracked characteristics are automatically generated
