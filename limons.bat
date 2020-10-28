@@ -1,1 +1,1 @@
-limons.py -d 00:01 -p 1000 -od true -oa true -l false
+limons.py -d 5 -p 1000 -analytics true -disp true -cpu true -mem true -disk true -net true -docker true

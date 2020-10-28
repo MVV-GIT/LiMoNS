@@ -234,15 +234,15 @@ def monitor_thread(thmcount, thmonitoring_time_end):
                 os.system('cls' if os.name == 'nt' else 'clear')
 
             if mflag_cpu:
-                section_cpu()
+                section_cpu(datetime.now())
             if mflag_mem:
-                section_mem()
+                section_mem(datetime.now())
             if mflag_disk:
-                section_disk()
+                section_disk(datetime.now())
             if mflag_network:
-                section_net()
+                section_net(datetime.now())
             if mflag_docker:
-                section_docker()
+                section_docker(datetime.now())
 
             time.sleep(timeout_between_query)
 
