@@ -268,7 +268,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '-cpu', '--cpu',
+        '-C','-cpu', '--cpu',
         required=False,
         type=str,
         default='false',
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-mem', '--mem',
+        '-M','-mem', '--mem',
         required=False,
         type=str,
         default='false',
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-net', '--network',
+        '-N','-net', '--network',
         required=False,
         type=str,
         default='false',
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-docker', '--docker',
+        '-doc', '--docker',
         required=False,
         type=str,
         default='false',
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-d', '--duration',
+        '-D','-d', '--duration',
         required=True,
         type=str,
         default='00:00',
@@ -348,7 +348,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-analytics', '--analytics',
+        '-A','-analytics', '--analytics',
         type=str,
         required=False,
         default='False',
@@ -364,6 +364,7 @@ if __name__ == "__main__":
     )
 
     args_namespace = parser.parse_args()
+
 
     if str(args_namespace.version).lower() == '?':
         lutil.print_sys_info()

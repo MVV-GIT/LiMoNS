@@ -64,11 +64,15 @@ def get_sys_info():
     conn = http.client.HTTPConnection("ifconfig.me")
     conn.request("GET", "/ip")
     nodeip = str(conn.getresponse().read())
+    dockerinfo = get_docker_state()
     system_time_stamp = datetime.now()
+    memuse = psutil.virtual_memory()
+    hddinfo = psutil.disk_partitions()
 
     sys_info_set.update({'Scrypt_Name': 'LInux MOnitoring Node Symbol scrypt'})
     sys_info_set.update({'Scrypt_Version': version})
     sys_info_set.update({'Python_Version': str(sys.version_info.major) + '.' + str(sys.version_info.minor)})
+    sys_info_set.update({'Local_time_stamp': system_time_stamp.astimezone().strftime('%Y-%m-%d %H:%M:%S [%z]')})
     sys_info_set.update({'OS': str(sys.platform) + '/' + str(os.name)})
     sys_info_set.update({'Node_IP': nodeip[2:-1]})
     sys_info_set.update({'CPU_Core': str(psutil.cpu_count(logical=False))})
@@ -76,25 +80,27 @@ def get_sys_info():
     sys_info_set.update({'CPU_Arch': os.getenv('PROCESSOR_ARCHITECTURE')})
     sys_info_set.update({'CPU_ID': str(os.getenv('PROCESSOR_IDENTIFIER'))})
     sys_info_set.update({'CPU_Level': str(os.getenv('PROCESSOR_LEVEL'))})
-    sys_info_set.update({'Local_time_stamp': system_time_stamp.astimezone().strftime('%Y-%m-%d %H:%M:%S [%z]')})
+
+    i = 0
+    for key in memuse._fields:
+        sys_info_set.update({'MEM ' + key :  memuse[i]})
+        i = i + 1
+
+    for i in range(len(hddinfo)):
+        s = str(hddinfo[i])
+        sys_info_set.update({'Disk ' + str(i): s[10:-1:]})
+
+    i = 0
+    for containerx in dockerinfo:
+        sys_info_set.update({'Docker ' + str(i) : str(containerx[0]) + ' / ' + str(containerx[1]) + ' / ' + str(containerx[2]) + ' / ' + str(containerx[3])})
+        i = i +1
 
     return sys_info_set
 
-
 def print_sys_info():
     info = get_sys_info()
-
-    print('Scrypt version:', info['Scrypt_Name'], info['Scrypt_Version'])
-    print('Python version:', info['Python_Version'])
-    print('OS:', info['OS'])
-    print('Node IP:', info['Node_IP'])
-    print('CPU Core:', info['CPU_Core'])
-    print('CPU thread:', info['CPU_Thread'])
-    print('CPU arch:', info['CPU_Arch'])
-    print('CPU ID:', info['CPU_ID'])
-    print('CPU level:', info['CPU_Level'])
-    print('Local time: ', info['Local_time_stamp'])
-
+    for key,val in info.items():
+        print(key,' : ', val)
 
 def get_time_end(start_time, durationtime='00:00'):
     temp_time = datetime.strptime(durationtime, '%H:%M').time()
