@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# LInux MOnitoring Node Symbol scrypt
+# LInux MOnitoring Node Scrypt
 # LIMONS
 # (c) DrCryptos / cryptocoins4all@gmail.com / @DrCryptos
 # usr/local/limons
@@ -18,7 +18,7 @@ import psutil
 import lutil
 
 args_namespace, duration, analyticsfile = None, None, None
-flag_log, flag_analytic, flag_display, flag_docker_launched = False, False, False, False
+flag_log, flag_analytic, flag_display = False, False, False
 mflag_cpu, mflag_mem, mflag_disk, mflag_network, mflag_docker = False, False, False, False, False
 
 
@@ -84,8 +84,11 @@ def out_analytics_init_header_docker(afile):
 def section_cpu(monitoring_time_stamp=datetime.now()):
     cpupercent = list(psutil.cpu_percent(percpu=True))
     cputime = list(psutil.cpu_times(percpu=True))
+    # cpufreq = psutil.cpu_freq()
+
     if flag_display:
         print(lutil.c_cyan, '[CPU section]', lutil.c_norm, sep='')
+        # print(lutil.c_cyan, f"Frequency Max : {cpufreq.max:.2f} Mhz, Min : {cpufreq.min:.2f} Mhz, Current : {cpufreq.current:.2f} Mhz", lutil.c_norm, sep='')
     for i in range(len(cpupercent)):
         if flag_analytic:
             writer = csv.writer(analyticsfile_cpu_percent, delimiter=';')
@@ -93,18 +96,16 @@ def section_cpu(monitoring_time_stamp=datetime.now()):
             adata.append(monitoring_time_stamp)
             adata.append(i)
             adata.append(str(cpupercent[i]).replace('.', ','))
-
             for cpuinfoset in cputime[i]:
                 adata.append((str(cpuinfoset).replace('.', ',')))
             writer.writerow(adata)
-
         if flag_display:
-            print('CPU ID:', i, '/ CPU %',
+            print('CPU ID:', i, 'Usage:',
                   lutil.c_red if cpupercent[i] >= 75 else lutil.c_yellow if cpupercent[i] >= 50 else lutil.c_green,
-                  cpupercent[i], lutil.c_norm, end='')
+                  f"{cpupercent[i]:5.2f} %", lutil.c_norm, end='')
             j = 0
             for key in cputime[i]._fields:
-                print(' / ', key, ' = {:f}'.format(cputime[i][j]), end='')
+                print(key + f" {cputime[i][j]:.4f}  ", end='')
                 j = j + 1
             print()
     if flag_display:
@@ -228,8 +229,7 @@ def monitor_thread(thmcount, thmonitoring_time_end):
 
         try:
             iterations = iterations + 1
-            monitoring_time_stamp = datetime.now()
-
+            # monitoring_time_stamp = datetime.now()
             if flag_display:
                 os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -383,8 +383,6 @@ if __name__ == "__main__":
     flag_analytic = str(args_namespace.analytics).lower() == 'true'
     flag_display = str(args_namespace.display).lower() == 'true'
     flag_debug = str(args_namespace.debug).lower() == 'true'
-
-    # flag_docker_launched = lutil.check_docker_state()
 
     if ((not flag_analytic) and (not flag_display)) or (
             (not mflag_cpu) and (not mflag_mem) and (not mflag_disk) and (not mflag_network) and (not mflag_docker)):
