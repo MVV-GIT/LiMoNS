@@ -6,7 +6,7 @@ import platform
 import docker
 import psutil
 
-version = '0.1.3.37'
+version = '0.1.3.39'
 
 # color scheme
 c_black = '\033[30m'  # black
@@ -20,6 +20,29 @@ c_white = '\033[37m'  # white
 c_norm = '\033[39m'
 cb_white = '\033[47m'
 cb_norm = '\033[49m'
+
+hddparamdict = {
+        'read_count':'RC',
+        'write_count':'WC',
+        'read_bytes':'RB',
+        'write_bytes':'WB',
+        'read_time':'RT',
+        'write_time':'WT',
+        'read_merged_count':'RMC',
+        'write_merged_count':'WMC',
+        'busy_time':'BT'
+        }
+
+netparamdict = {
+        'bytes_sent':'BtS',
+        'bytes_recv':'BtR',
+        'packets_sent':'PkS',
+        'packets_recv':'PkR',
+        'errin':'ErI',
+        'errout':'ErO',
+        'dropin':'DrI',
+        'dropout':'DrO'
+        }
 
 
 def get_process_info():

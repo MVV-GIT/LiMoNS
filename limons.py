@@ -82,13 +82,10 @@ def out_analytics_init_header_docker(afile):
 
 
 def section_cpu(monitoring_time_stamp=datetime.now()):
-    cpupercent = list(psutil.cpu_percent(percpu=True))
-    cputime = list(psutil.cpu_times(percpu=True))
-    # cpufreq = psutil.cpu_freq()
-
     if flag_display:
         print(lutil.c_cyan, '[CPU section]', lutil.c_norm, sep='')
-        # print(lutil.c_cyan, f"Frequency Max : {cpufreq.max:.2f} Mhz, Min : {cpufreq.min:.2f} Mhz, Current : {cpufreq.current:.2f} Mhz", lutil.c_norm, sep='')
+    cpupercent = list(psutil.cpu_percent(percpu=True))
+    cputime = list(psutil.cpu_times(percpu=True))
     for i in range(len(cpupercent)):
         if flag_analytic:
             writer = csv.writer(analyticsfile_cpu_percent, delimiter=';')
@@ -113,6 +110,8 @@ def section_cpu(monitoring_time_stamp=datetime.now()):
 
 
 def section_mem(monitoring_time_stamp=datetime.now()):
+    if flag_display:
+        print(lutil.c_cyan, '[MEM section]', lutil.c_norm, sep='')
     memuse = psutil.virtual_memory()
     if flag_analytic:
         writer = csv.writer(analyticsfile_mem, delimiter=';')
@@ -123,7 +122,6 @@ def section_mem(monitoring_time_stamp=datetime.now()):
         writer.writerow(adata)
 
     if flag_display:
-        print(lutil.c_cyan, '[MEM section]', lutil.c_norm, sep='')
         print('MEM: ', end='')
         i = 0
         for key in memuse._fields:
@@ -150,7 +148,7 @@ def section_disk(monitoring_time_stamp=datetime.now()):
             print('Disk:', hddname, end='')
             i = 0
             for key in hddsetmesure._fields:
-                print(' /', key, '=', hddsetmesure[i], end='')
+                print(' /', lutil.hddparamdict[key], '=', hddsetmesure[i], end='')
             print()
     if flag_display:
         print()
@@ -170,33 +168,31 @@ def section_net(monitoring_time_stamp=datetime.now()):
                 adata.append(str(detail).replace('.', ','))
             writer.writerow(adata)
         if flag_display:
-            print('Interface:', netname)
+            print('Interface:', netname, end='')
             i = 0
             for key in netsetmesure._fields:
-                print(' /', key, '=', netsetmesure[i], end='')
+                print(' /', lutil.netparamdict[key], '=', netsetmesure[i], end='')
             print()
     if flag_display:
         print()
 
 
 def section_docker(monitoring_time_stamp=datetime.now()):
+    if flag_display:
+        print(lutil.c_cyan, '[DOCKER section]', lutil.c_norm, sep='')
     if lutil.check_docker_state():
         dockeruse = lutil.get_docker_state()
-
         if flag_display:
-            print(lutil.c_cyan, '[DOCKER section]', lutil.c_norm, sep='')
             i = 0
             for containerx in dockeruse:
                 print('Container ', i, ' : ', containerx[0], ' / ', containerx[1], ' / ', containerx[2], ' / ',
                       containerx[3])
                 i = i + 1
             print()
-
         if flag_analytic:
             writer = csv.writer(analyticsfile_docker, delimiter=';')
             adata = []
             adata.append(monitoring_time_stamp)
-
             i = 0
             for containerx in dockeruse:
                 adata.append('Docker ' + str(i))
@@ -213,7 +209,7 @@ def section_docker(monitoring_time_stamp=datetime.now()):
             writer = csv.writer(analyticsfile_docker, delimiter=';')
             adata = []
             adata.append(monitoring_time_stamp)
-            adata.append('Dicker not found', '', '', '')
+            adata.append('Dicker not found')
             writer.writerow(adata)
 
 
