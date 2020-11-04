@@ -80,7 +80,6 @@ def out_analytics_init_header_docker(afile):
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
-
 def section_cpu(monitoring_time_stamp=datetime.now()):
     if flag_display:
         print(lutil.c_cyan, '[CPU section]', lutil.c_norm, sep='')
@@ -225,10 +224,8 @@ def monitor_thread(thmcount, thmonitoring_time_end):
 
         try:
             iterations = iterations + 1
-            # monitoring_time_stamp = datetime.now()
             if flag_display:
                 os.system('cls' if os.name == 'nt' else 'clear')
-
             if mflag_cpu:
                 section_cpu(datetime.now())
             if mflag_mem:
@@ -239,6 +236,9 @@ def monitor_thread(thmcount, thmonitoring_time_end):
                 section_net(datetime.now())
             if mflag_docker:
                 section_docker(datetime.now())
+            if flag_display:
+                print('Duration: ' + lutil.c_green + duration + lutil.c_norm + ' Current execution time: ' + lutil.c_green + str(
+                    datetime.now() - monitoring_time_start) + lutil.c_norm + ' Iterations count = ' + str(iterations))
 
             time.sleep(timeout_between_query)
 

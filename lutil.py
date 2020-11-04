@@ -6,7 +6,7 @@ import platform
 import docker
 import psutil
 
-version = '0.1.3.39'
+version = '0.1.3.43'
 
 # color scheme
 c_black = '\033[30m'  # black
