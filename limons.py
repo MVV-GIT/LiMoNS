@@ -80,6 +80,7 @@ def out_analytics_init_header_docker(afile):
     writer = csv.writer(afile, delimiter=';')
     writer.writerow(adata)
 
+
 def section_cpu(monitoring_time_stamp=datetime.now()):
     if flag_display:
         print(lutil.c_cyan, '[CPU section]', lutil.c_norm, sep='')
@@ -124,7 +125,8 @@ def section_mem(monitoring_time_stamp=datetime.now()):
         print('MEM: ', end='')
         i = 0
         for key in memuse._fields:
-            print(key, '=' if key != 'percent' else lutil.c_red if memuse[i] >= 75 else lutil.c_yellow if memuse[i] >= 50 else lutil.c_green,
+            print(key, '=' if key != 'percent' else lutil.c_red if memuse[i] >= 75 else lutil.c_yellow if memuse[
+                                                                                                              i] >= 50 else lutil.c_green,
                   memuse[i], '/', lutil.c_norm, end='')
             i = i + 1
         print('\n')
@@ -237,8 +239,10 @@ def monitor_thread(thmcount, thmonitoring_time_end):
             if mflag_docker:
                 section_docker(datetime.now())
             if flag_display:
-                print('Duration: ' + lutil.c_green + duration + lutil.c_norm + ' Current execution time: ' + lutil.c_green + str(
-                    datetime.now() - monitoring_time_start) + lutil.c_norm + ' Iterations count = ' + str(iterations))
+                print(
+                    'Duration: ' + lutil.c_green + duration + lutil.c_norm + ' Current execution time: ' + lutil.c_green + str(
+                        datetime.now() - monitoring_time_start) + lutil.c_norm + ' Iterations count = ' + str(
+                        iterations))
 
             time.sleep(timeout_between_query)
 
@@ -264,7 +268,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '-C','-cpu', '--cpu',
+        '-C', '-cpu', '--cpu',
         required=False,
         type=str,
         default='false',
@@ -272,7 +276,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-M','-mem', '--mem',
+        '-M', '-mem', '--mem',
         required=False,
         type=str,
         default='false',
@@ -288,7 +292,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-N','-net', '--network',
+        '-N', '-net', '--network',
         required=False,
         type=str,
         default='false',
@@ -312,7 +316,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-D','-d', '--duration',
+        '-D', '-d', '--duration',
         required=True,
         type=str,
         default='00:00',
@@ -344,7 +348,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        '-A','-analytics', '--analytics',
+        '-A', '-analytics', '--analytics',
         type=str,
         required=False,
         default='False',
@@ -360,7 +364,6 @@ if __name__ == "__main__":
     )
 
     args_namespace = parser.parse_args()
-
 
     if str(args_namespace.version).lower() == '?':
         lutil.print_sys_info()
